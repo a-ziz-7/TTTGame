@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            text-align: center;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 180px);
+            grid-template-rows: repeat(3, 180px);
+            gap: 10px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 180px;
+            height: 180px;
+            background-color: #a8e5e5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4em;
+            cursor: pointer;
+        }
+        .cell.x {
+            color: #ec8505;
+        }
+        .cell.o {
+            color: #c205ec;
+        }
+        .info {
+            margin: 20px 0;
+            font-size: 1.7em;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .scores {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            font-size: 1.5em;
+        }
+        .button {
+            background-color: #10ff5a;
+            border: none;
+            padding: 20px 40px;
+            font-size: 1.5em;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .win {
+            background-color: gold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="info" id="info">
+            <span id="turn">Turn: X</span>
+        </div>
+        <div class="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <div class="scores">
+            <span id="x-score">X Score: 0</span>
+            <span id="o-score">O Score: 0</span>
+        </div>
+        <button class="button" id="reset">Reset</button>
+    </div>
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const turnDisplay = document.getElementById('turn');
+        const infoDisplay = document.getElementById('info');
+        const xScoreDisplay = document.getElementById('x-score');
+        const oScoreDisplay = document.getElementById('o-score');
+        const resetButton = document.getElementById('reset');
+
+        let turn = 'X';
+        let xScore = 0;
+        let oScore = 0;
+        let gameOver = false;
+
+        const winPatterns = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+        ];
+
+        function updateTurnDisplay() {
+            turnDisplay.textContent = `Turn: ${turn}`;
+            infoDisplay.style.backgroundColor = turn === 'X' ? '#ec8505' : '#c205ec';
+        }
+
+        function checkWin() {
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (cells[a].textContent && cells[a].textContent === cells[b].textContent && cells[a].textContent === cells[c].textContent) {
+                    cells[a].classList.add('win');
+                    cells[b].classList.add('win');
+                    cells[c].classList.add('win');
+                    gameOver = true;
+                    return cells[a].textContent;
+                }
+            }
+            return null;
+        }
+
+        function checkDraw() {
+            return [...cells].every(cell => cell.textContent);
+        }
+
+        function handleClick(e) {
+            if (gameOver) return;
+            const cell = e.target;
+            if (cell.textContent) return;
+            cell.textContent = turn;
+            cell.classList.add(turn.toLowerCase());
+
+            const winner = checkWin();
+            if (winner) {
+                if (winner === 'X') {
+                    xScore++;
+                    xScoreDisplay.textContent = `X Score: ${xScore}`;
+                } else {
+                    oScore++;
+                    oScoreDisplay.textContent = `O Score: ${oScore}`;
+                }
+                turnDisplay.textContent = `Winner: ${winner}`;
+                return;
+            }
+
+            if (checkDraw()) {
+                turnDisplay.textContent = 'Draw!';
+                infoDisplay.style.backgroundColor = "maroon";
+                gameOver = true;
+                return;
+            }
+
+            turn = turn === 'X' ? 'O' : 'X';
+            updateTurnDisplay();
+        }
+
+        function resetGame() {
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.className = 'cell';
+            });
+            turn = turn=='X'? 'O':'X';
+            gameOver = false;
+            updateTurnDisplay();
+        }
+
+        function resetGameOnRKey(e) {
+            if (e.code === 'KeyR') {
+                resetGame();
+            }
+        }
+
+        function resetGameOnSpaceKey(e) {
+            if (e.code === 'Space' && gameOver) {
+                resetGame();
+            }
+        }
+
+        cells.forEach(cell => cell.addEventListener('click', handleClick));
+        resetButton.addEventListener('click', resetGame);
+        document.addEventListener('keydown', resetGameOnSpaceKey);
+        document.addEventListener('keydown', resetGameOnRKey);
+
+        updateTurnDisplay();
+    </script>
+</body>
+</html>

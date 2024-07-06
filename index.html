@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+        .info {
+            margin: 10px 0;
+            font-size: 1.2em;
+            padding: 5px;
+            border-radius: 5px;
+            text-align: center;
+            width: 90%;
+        }
+        .players {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 0 20px;
+            width: 200px;
+            height: 530px;
+            justify-content: space-around;
+        }
+        .player-button {
+            background-color: #007bff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.5em;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: border 0.2s;
+        }
+        .player-button.selected {
+            background-color: #ff8505;
+        }
+        .player-button.selected-player {
+            border: 4px solid #ff8505;
+        }
+        .player-button.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 160px);
+            grid-template-rows: repeat(3, 160px);
+            gap: 10px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 160px;
+            height: 160px;
+            background-color: #a8e5e5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 4em;
+            cursor: pointer;
+        }
+        .cell.x {
+            color: #ec8505;
+        }
+        .cell.o {
+            color: #c205ec;
+        }
+        .button {
+            background-color: #10ff5a;
+            border: none;
+            padding: 5px 10px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .win {
+            background-color: gold;
+        }
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            width: 99%;
+            margin-left: 10px;
+            margin-right: 10px;
+            margin-top: 10px;
+            font-size: 1.5em;
+        }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            z-index: 100;
+        }
+        .color-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .color-option {
+            width: 50px;
+            height: 50px;
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .color-picker {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .color-picker input[type="color"] {
+            width: 50px;
+            height: 50px;
+            border: none;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        @keyframes fireworks {
+            0% {
+                transform: scale(0.1);
+                opacity: 0.1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+        .fireworks {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            animation: fireworks 3s ease-out;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .fireworks-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="info" id="info">Tic Tac Toe</div>
+        <div class="players">
+            <div class="player-list" id="player-list-x"></div>
+            <div class="board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+            <div class="player-list" id="player-list-o"></div>
+        </div>
+        <div class="scoreboard" id="scoreboard"></div>
+        <button class="button" id="reset">Reset</button>
+    </div>
+    <div class="popup" id="color-popup">
+        <h2>Select Color</h2>
+        <div class="color-options" id="color-options">
+            <!-- Color options will be added here dynamically -->
+        </div>
+        <div class="color-picker">
+            <label for="color-picker-input">Custom:</label>
+            <input type="color" id="color-picker-input">
+        </div>
+        <button class="button" id="confirm-color">Confirm</button>
+    </div>
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const turnDisplay = document.getElementById('info');
+        const infoDisplay = document.getElementById('info');
+        const resetButton = document.getElementById('reset');
+        const playerListX = document.getElementById('player-list-x');
+        const playerListO = document.getElementById('player-list-o');
+        const scoreboard = document.getElementById('scoreboard');
+        const colorPopup = document.getElementById('color-popup');
+        const colorOptionsContainer = document.getElementById('color-options');
+        const colorPickerInput = document.getElementById('color-picker-input');
+        const confirmColorButton = document.getElementById('confirm-color');
+
+        let turn = 'X';
+        let globalTurn = 'X';
+        let gameOver = true; // Game starts with players not selected
+        let currentPlayerX = null;
+        let currentPlayerO = null;
+        let selectedPlayerIndex = null;
+        let selectedPlayerList = null;
+
+        const defaultColor = '#007bff';
+        const playerData = [
+            { name: 'Daniel', score: 0, color: defaultColor },
+            { name: 'Asmira', score: 0, color: defaultColor },
+            { name: 'Tabris', score: 0, color: defaultColor },
+            { name: 'Hamza', score: 0, color: defaultColor },
+            { name: 'Sabrina', score: 0, color: defaultColor },
+            { name: 'Hatidja', score: 0, color: defaultColor },
+            { name: 'Aziz', score: 0, color: defaultColor}
+        ];
+
+        const colors = [
+            '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff',
+            '#00ffff', '#ffa500', '#008000', '#7F00FF', '#808000'
+        ];
+
+        const winPatterns = [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+        ];
+
+        function updateTurnDisplay() {
+            if (turn === 'X' && currentPlayerX !== null) {
+                turnDisplay.textContent = `Turn X: (${playerData[currentPlayerX].name})`;
+            } else if (turn === 'O' && currentPlayerO !== null) {
+                turnDisplay.textContent = `Turn O: (${playerData[currentPlayerO].name})`;
+            }
+            infoDisplay.style.backgroundColor = turn === 'X' ? playerData[currentPlayerX].color : playerData[currentPlayerO].color;
+        }
+
+        function checkWin() {
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (cells[a].textContent && cells[a].textContent === cells[b].textContent && cells[a].textContent === cells[c].textContent) {
+                    cells[a].classList.add('win');
+                    cells[b].classList.add('win');
+                    cells[c].classList.add('win');
+                    gameOver = true;
+                    globalTurn = globalTurn === 'X' ? 'O' : 'X';
+                    turn = globalTurn;
+                    return cells[a].textContent;
+                }
+            }
+            return null;
+        }
+
+        function checkDraw() {
+            return [...cells].every(cell => cell.textContent);
+        }
+
+        function handleClick(e) {
+            if (gameOver || currentPlayerX === null || currentPlayerO === null) return;
+            const cell = e.target;
+            if (cell.textContent) return;
+            cell.textContent = turn;
+            cell.classList.add(turn.toLowerCase());
+            cell.style.color = turn === 'X' ? playerData[currentPlayerX].color : playerData[currentPlayerO].color;
+
+            const winner = checkWin();
+            if (winner) {
+                const winnerIndex = winner === 'X' ? currentPlayerX : currentPlayerO;
+                playerData[winnerIndex].score++;
+                updatePlayerScores();
+                turnDisplay.textContent = `Winner: ${winner} (${playerData[winnerIndex].name})`;
+                displayFireworks(winnerIndex);
+                return;
+            }
+
+            if (checkDraw()) {
+                turnDisplay.textContent = 'Draw!';
+                gameOver = true;
+                return;
+            }
+
+            turn = turn === 'X' ? 'O' : 'X';
+            updateTurnDisplay();
+        }
+
+        function updatePlayerScores() {
+            scoreboard.innerHTML = '';
+            playerData.forEach((player, index) => {
+                const scoreDiv = document.createElement('div');
+                scoreDiv.textContent = `${player.name}: ${player.score}`;
+                scoreDiv.style.backgroundColor = player.color !== defaultColor ? player.color : 'white';
+                scoreDiv.style.color = '#000000';
+                scoreDiv.style.padding = '5px';
+                scoreDiv.style.margin = '5px';
+                scoreDiv.style.borderRadius = '5px';
+                scoreDiv.style.width = '200px';
+                scoreDiv.style.height = '60px';
+                scoreDiv.style.display = 'flex';
+                scoreDiv.style.alignItems = 'center';
+                scoreDiv.style.justifyContent = 'center';
+                scoreDiv.classList.add('fireworks-container');
+                scoreboard.appendChild(scoreDiv);
+            });
+        }
+
+        function resetGame() {
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.className = 'cell';
+                cell.style.color = '';
+            });
+            gameOver = false;
+            updateTurnDisplay();
+        }
+
+        function resetGameOnRKey(e) {
+            if (e.code === 'KeyR') {
+                resetGame();
+            }
+        }
+
+        function resetGameOnSpaceKey(e) {
+            if (e.code === 'Space' && gameOver) {
+                resetGame();
+            }
+        }
+
+        function resetGameOnQKey(e) {
+            if (e.code === 'KeyQ') {
+                resetGame();
+                currentPlayerX = null;
+                currentPlayerO = null;
+                updatePlayerDivColors();
+                turnDisplay.textContent = 'Tic Tac Toe';
+                infoDisplay.style.backgroundColor = '';
+            }
+        }
+
+        function selectPlayer(index, listId) {
+            if (listId === 'x') {
+                if (currentPlayerO === index) return; // Prevent same player for both X and O
+                currentPlayerX = index;
+            } else {
+                if (currentPlayerX === index) return; // Prevent same player for both X and O
+                currentPlayerO = index;
+            }
+
+            removeSelectedClass();
+            resetGame();
+            globalTurn = 'X';
+            turn = 'X';
+            if (playerData[index].color === defaultColor) {
+                selectedPlayerList = listId === 'x' ? playerListX : playerListO;
+                selectedPlayerIndex = index;
+                showColorPopup();
+            } else {
+                updatePlayerDivColors();
+                updateTurnDisplay();
+            }
+        }
+
+        function removeSelectedClass() {
+            const allPlayerButtons = [...playerListX.children, ...playerListO.children];
+            allPlayerButtons.forEach(button => button.classList.remove('selected', 'selected-player'));
+        }
+
+        function showColorPopup() {
+            const playerList = selectedPlayerList === playerListX ? playerListX : playerListO;
+            playerList.querySelectorAll('.player-button').forEach(button => button.classList.remove('selected', 'selected-player'));
+            colorPopup.style.display = 'flex';
+            updateColorOptions();
+        }
+
+        function updateColorOptions() {
+            colorOptionsContainer.innerHTML = '';
+            colors.forEach(color => {
+                const colorButton = document.createElement('button');
+                colorButton.className = 'color-option';
+                colorButton.style.backgroundColor = color;
+                colorButton.addEventListener('click', () => selectColor(color));
+                colorOptionsContainer.appendChild(colorButton);
+            });
+        }
+
+        function selectColor(color) {
+            if (selectedPlayerIndex !== null) {
+                playerData[selectedPlayerIndex].color = color;
+                updatePlayerScores();
+                colorPopup.style.display = 'none';
+                selectedPlayerIndex = null;
+                updatePlayerDivColors();
+                if (currentPlayerX !== null && currentPlayerO !== null) {
+                    gameOver = false;
+                    updateTurnDisplay();
+                }
+            }
+        }
+
+        function updatePlayerDivColors() {
+            playerData.forEach((player, index) => {
+                const playerButtonX = playerListX.children[index];
+                const playerButtonO = playerListO.children[index];
+                playerButtonX.style.backgroundColor = player.color;
+                playerButtonO.style.backgroundColor = player.color;
+                playerButtonX.classList.remove('selected');
+                playerButtonO.classList.remove('selected');
+                if (currentPlayerX === index) {
+                    playerButtonX.classList.add('selected-player');
+                }
+                if (currentPlayerO === index) {
+                    playerButtonO.classList.add('selected-player');
+                }
+            });
+        }
+
+        function allowReselectColor(index, listId) {
+            if (listId === 'x') {
+                if (currentPlayerX === index) {
+                    currentPlayerX = null;
+                }
+            } else {
+                if (currentPlayerO === index) {
+                    currentPlayerO = null;
+                }
+            }
+            gameOver = true; // Game cannot proceed until color is reselected
+        }
+
+        function displayFireworks(index) {
+            const scoreDiv = scoreboard.children[index];
+            for (let i = 0; i < 10; i++) { // Increase number of fireworks
+                const fireworks = document.createElement('div');
+                fireworks.className = 'fireworks';
+                fireworks.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                fireworks.style.top = `${Math.random() * 100}%`;
+                fireworks.style.left = `${Math.random() * 100}%`;
+                scoreDiv.appendChild(fireworks);
+                setTimeout(() => scoreDiv.removeChild(fireworks), 1000);
+            }
+        }
+
+        confirmColorButton.addEventListener('click', () => selectColor(colorPickerInput.value));
+        playerData.forEach((player, index) => {
+            const buttonX = document.createElement('button');
+            buttonX.className = 'player-button';
+            buttonX.textContent = player.name;
+            buttonX.addEventListener('click', () => selectPlayer(index, 'x'));
+            buttonX.addEventListener('dblclick', () => allowReselectColor(index, 'x'));
+            playerListX.appendChild(buttonX);
+
+            const buttonO = document.createElement('button');
+            buttonO.className = 'player-button';
+            buttonO.textContent = player.name;
+            buttonO.addEventListener('click', () => selectPlayer(index, 'o'));
+            buttonO.addEventListener('dblclick', () => allowReselectColor(index, 'o'));
+            playerListO.appendChild(buttonO);
+        });
+        updatePlayerScores();
+
+        cells.forEach(cell => cell.addEventListener('click', handleClick));
+        resetButton.addEventListener('click', resetGame);
+        document.addEventListener('keydown', resetGameOnSpaceKey);
+        document.addEventListener('keydown', resetGameOnRKey);
+        document.addEventListener('keydown', resetGameOnQKey);
+
+
+        // Initial update for the turn display background and player scores
+        updateTurnDisplay();
+    </script>
+</body>
+</html>
